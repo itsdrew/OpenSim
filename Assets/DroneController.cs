@@ -4,82 +4,111 @@ using UnityEngine;
 
 public class DroneController : MonoBehaviour {
 
+
 	Rigidbody rb;
+	public float maxAngularVelocity = 10;
+	public float angularDrag = 20;
 
 
-	float maxAngularVelocity = 30;
-	float dIdT = 100; //For keyboard input, di/dt, how fast the input changes the value
+	float minThrottle = 5;
+	public float maxThrottle = 1000;
+	float dItdT = 1000; //For keyboard input: how fast the input changes throttle value. Might be unecessary since props can change speed almost instantly
 
+	public float torqueMultiplier = 15000;
+	public float dIrdT = 1000; //For keyboard input: how fast the input changes a rotational value. Might be unecessary since using rigid body angular drag
 
 	float throttle;
-
 	float rollTorque;
 	float pitchTorque;
 	float yawTorque;
-	float torqueMultiplier = 1000;
 
 	//Values are -1, 0, 1: apply in negative direction, don't apply, apply in positive direction
-	int rollAxisMultiplier;
-	int pitchAxisMultiplier;
-	int yawAxisMultiplier;
+	int rollAxisDirection;
+	int pitchAxisDirection;
+	int yawAxisDirection;
+	int throttleDirection;
 
 	// Start is called before the first frame update
 	void Start() {
 		rb = GetComponent<Rigidbody>();
 		rb.maxAngularVelocity = maxAngularVelocity;
+		rb.angularDrag = angularDrag;
 	}
 
 	void Throttle() {
 		rb.AddForce(transform.up * throttle * Time.fixedDeltaTime);
 	}
 
+	void Rotate(Vector3 direction, float amount) {
+		rb.AddTorque(direction * amount * Time.fixedDeltaTime * torqueMultiplier);
+	}
+
 	void Roll() {
-		rb.AddTorque(-transform.forward * rollTorque * Time.fixedDeltaTime * torqueMultiplier);
+		Rotate(-transform.forward, rollTorque);
 	}
 
 	void Pitch() {
-		rb.AddTorque(transform.right * pitchTorque * Time.fixedDeltaTime * torqueMultiplier);
+		Rotate(transform.right, pitchTorque);
 	}
 
 	void Yaw() {
-		rb.AddTorque(transform.up * yawTorque * Time.fixedDeltaTime * torqueMultiplier);
+		Rotate(transform.up, yawTorque*2);
 	}
 
-	float ChangeRotation(int axisMultiplier, float curr) {
-		return Mathf.Clamp(axisMultiplier * (curr + dIdT * Time.deltaTime), -1, 1);
+	void ChangeThrottle(int multiplier, ref float curr) {
+
+		//Don't change throttle if no button is pressed.
+		curr = Mathf.Clamp(curr + multiplier * dItdT * Time.deltaTime, minThrottle, maxThrottle);
+	}
+
+	void ChangeRotationMagnitude(int axisMultiplier, ref float curr) {
+		if (axisMultiplier == 0) {
+			curr = 0;
+		}
+
+		curr = Mathf.Clamp(curr + axisMultiplier * dIrdT * Time.deltaTime, -1, 1);
 	}
 
 	void KeyboardInput() {
 
 		if (Input.GetKey(KeyCode.LeftArrow)) {
-			rollAxisMultiplier = -1;
+			rollAxisDirection = -1;
 		} else if (Input.GetKey(KeyCode.RightArrow)) {
-			rollAxisMultiplier = 1;
+			rollAxisDirection = 1;
 		} else {
-			rollAxisMultiplier = 0;
+			rollAxisDirection = 0;
 		}
 
 		if (Input.GetKey(KeyCode.DownArrow)) {
-			pitchAxisMultiplier = -1;
+			pitchAxisDirection = -1;
 		} else if (Input.GetKey(KeyCode.UpArrow)) {
-			pitchAxisMultiplier = 1;
+			pitchAxisDirection = 1;
 		} else {
-			pitchAxisMultiplier = 0;
+			pitchAxisDirection = 0;
 		}
 
 		if (Input.GetKey(KeyCode.A)) {
-			yawAxisMultiplier = -1;
+			yawAxisDirection = -1;
 		} else if (Input.GetKey(KeyCode.D)) {
-			yawAxisMultiplier = 1;
+			yawAxisDirection = 1;
 		} else {
-			yawAxisMultiplier = 0;
+			yawAxisDirection = 0;
+		}
+
+		if (Input.GetKey(KeyCode.S)) {
+			throttleDirection = -1;
+		} else if (Input.GetKey(KeyCode.W)) {
+			throttleDirection = 1;
+		} else {
+			throttleDirection = 0;
 		}
 	}
 
 	void ApplyInputs() {
-		rollTorque = ChangeRotation(rollAxisMultiplier, rollTorque);
-		pitchTorque = ChangeRotation(pitchAxisMultiplier, pitchTorque);
-		yawTorque = ChangeRotation(yawAxisMultiplier, yawTorque);
+		ChangeThrottle(throttleDirection, ref throttle);
+		ChangeRotationMagnitude(rollAxisDirection, ref rollTorque);
+		ChangeRotationMagnitude(pitchAxisDirection, ref pitchTorque);
+		ChangeRotationMagnitude(yawAxisDirection, ref yawTorque);
 	}
 
 	// Update is called once per frame
@@ -89,10 +118,11 @@ public class DroneController : MonoBehaviour {
 	}
 
 	void FixedUpdate() {
+		Throttle();
 		Roll();
 		Pitch();
 		Yaw();
+		Debug.Log("Throttle: " + throttle);
 	}
-
 
 }
