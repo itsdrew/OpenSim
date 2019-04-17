@@ -12,7 +12,7 @@ public class DroneController : MonoBehaviour {
 
 	float minThrottle = 5;
 	public float maxThrottle = 1000;
-	float dItdT = 1000; //For keyboard input: how fast the input changes throttle value. Might be unecessary since props can change speed almost instantly
+	public float dItdT = 1000; //For keyboard input: how fast the input changes throttle value. Might be unecessary since props can change speed almost instantly
 
 	public float torqueMultiplier = 15000;
 	public float dIrdT = 1000; //For keyboard input: how fast the input changes a rotational value. Might be unecessary since using rigid body angular drag
@@ -102,6 +102,23 @@ public class DroneController : MonoBehaviour {
 		} else {
 			throttleDirection = 0;
 		}
+
+		if (Input.GetKeyDown(KeyCode.Space)) {
+			Reset();
+		}
+	}
+
+	void Reset() {
+		throttle = minThrottle;
+		rollTorque = 0;
+		pitchTorque = 0;
+		yawTorque = 0;
+
+		rb.velocity = Vector3.zero;
+		rb.angularVelocity = Vector3.zero;
+
+		transform.rotation = Quaternion.identity;
+		transform.position = Vector3.up;
 	}
 
 	void ApplyInputs() {
@@ -122,7 +139,6 @@ public class DroneController : MonoBehaviour {
 		Roll();
 		Pitch();
 		Yaw();
-		Debug.Log("Throttle: " + throttle);
 	}
 
 }
