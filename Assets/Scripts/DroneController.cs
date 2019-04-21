@@ -4,6 +4,15 @@ using UnityEngine;
 
 public class DroneController : MonoBehaviour {
 
+	public static DroneController instance = null;
+
+	private void Awake() {
+		if (instance == null) {
+			instance = this;
+		} else {
+			Destroy(this.gameObject);
+		}
+	}
 
 	Rigidbody rb;
 	public float maxAngularVelocity = 10;
@@ -11,16 +20,16 @@ public class DroneController : MonoBehaviour {
 
 
 	public float maxThrottle = 1000;
-	public float throttleMultiplier = 10;
+	float throttleMultiplier = 3000;
 	public float throttleInputValue;
 
 	public float torqueMultiplier = 15000;
 	public float dIrdT = 1000; //For keyboard input: how fast the input changes a rotational value. Might be unecessary since using rigid body angular drag
 
-	float throttle;
-	float rollTorque;
-	float pitchTorque;
-	float yawTorque;
+	public float throttle;
+	public float rollTorque;
+	public float pitchTorque;
+	public float yawTorque;
 
 	//Values are -1, 0, 1: apply in negative direction, don't apply, apply in positive direction
 	public int rollAxisDirection;
@@ -36,7 +45,7 @@ public class DroneController : MonoBehaviour {
 	}
 
 	void Throttle() {
-		rb.AddForce(transform.up * throttle * Time.fixedDeltaTime);
+		rb.AddForce(transform.up * throttle * throttleMultiplier * Time.fixedDeltaTime);
 	}
 
 	void Rotate(Vector3 direction, float amount) {
@@ -44,20 +53,20 @@ public class DroneController : MonoBehaviour {
 	}
 
 	void Roll() {
-		Rotate(-transform.forward, rollTorque);
+		Rotate(-transform.forward, rollTorque*2.5f);
 	}
 
 	void Pitch() {
-		Rotate(transform.right, pitchTorque);
+		Rotate(transform.right, pitchTorque*1.7f);
 	}
 
 	void Yaw() {
-		Rotate(transform.up, yawTorque*2);
+		Rotate(transform.up, yawTorque);
 	}
 
-	void ChangeRotationMagnitude(int axisMultiplier, ref float curr) {
-		curr = axisMultiplier == 0 ? 0 : Mathf.Clamp(curr + axisMultiplier * dIrdT * Time.deltaTime, -1, 1);
-	}
+	//void ChangeRotationMagnitude(int axisMultiplier, ref float curr) {
+	//	curr = axisMultiplier == 0 ? 0 : Mathf.Clamp(curr + axisMultiplier * dIrdT * Time.deltaTime, -1, 1);
+	//}
 
 
 	public void Reset() {
@@ -69,20 +78,21 @@ public class DroneController : MonoBehaviour {
 		transform.position = Vector3.up;
 	}
 
-	void ChangeThrottle() {
-		throttle = maxThrottle * throttleInputValue * throttleMultiplier;
-	}
+	//void ChangeThrottle() {
+	//	throttle = maxThrottle * throttleInputValue * throttleMultiplier;
+	//}
 
-	void ApplyInputs() {
-		ChangeThrottle();
-		ChangeRotationMagnitude(rollAxisDirection, ref rollTorque);
-		ChangeRotationMagnitude(pitchAxisDirection, ref pitchTorque);
-		ChangeRotationMagnitude(yawAxisDirection, ref yawTorque);
-	}
+	//void ApplyInputs() {
+	//	//ChangeThrottle();
+	//	//ChangeRotationMagnitude(rollAxisDirection, ref rollTorque);
+	//	//ChangeRotationMagnitude(pitchAxisDirection, ref pitchTorque);
+	//	//ChangeRotationMagnitude(yawAxisDirection, ref yawTorque);
+	//}
 
 	// Update is called once per frame
 	void Update() {
-		ApplyInputs();
+		//ApplyInputs();
+		Debug.Log(throttle);
 	}
 
 	void FixedUpdate() {
